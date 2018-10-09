@@ -1,0 +1,246 @@
+<!doctype html>
+<html>
+  <head><title>Sejt</title>
+<style>
+    body {
+        background-image: url('undersee.jpg');
+        background-repeat: no-repeat;
+        background-size: cover;
+        background-position: center;
+        overflow: hidden;
+    }
+    #tartalom {
+        height: 768px;
+    }
+    #start {
+        color: darkred;
+        cursor: pointer;
+        font-size: 2.0em;
+        font-weight: bold;
+        z-index: 40;
+        transition-duration: 1s;
+    }
+    #kiir {
+        font-size: 1.5em;
+        font-weight: bold;
+    }
+
+</style>
+<script>
+
+ 
+let peldanyokSzama = 80;
+let peldanyok = new Array(81);
+let jatekosMeret = 80;
+let jatekosx = window.innerWidth/2-(jatekosMeret/2);
+let jatekosy = window.innerHeight-(jatekosMeret/2);
+let vegigjart =0;   
+    
+    
+    
+
+var hangEffekt1;
+var hangEffekt2;
+function startHang() {
+    hangEffekt1 = new voice("plotty.mp3");
+    hangEffekt2 = new voice("putty.mp3");
+}
+function voice(forras) { 
+    // ez nem saját kód, az internetrol való
+    this.hang = document.createElement("audio");
+    this.hang.src = forras;
+    this.hang.setAttribute("preload", "auto");
+    this.hang.setAttribute("controls", "none");
+    this.hang.style.display = "none";
+    document.body.appendChild(this.hang);
+    this.play = function(){
+        this.hang.play();
+    }
+    this.stop = function(){
+        this.hang.pause();
+    }    
+}    
+
+    
+function indul() {   
+
+  vegigjart=0;
+  for(i=1; i<=peldanyokSzama; i++) {
+    let szulo  = document.getElementById("tartalom");
+    let lada   = document.createElement("div");
+    lada.id    = "lada"+i;
+    szulo.appendChild(lada);
+    osztaly(i);
+  }
+    
+document.getElementById("start").innerHTML='<br>';  
+}
+
+    
+function osztaly(sorszam) {
+    let min=20; let max=300;
+    let meret = Math.floor(Math.random()*(max-min))+min;
+    let sx = Math.floor(Math.random()*(window.innerWidth-meret));
+    let sy = Math.floor(Math.random()*window.innerHeight*4)+window.innerHeight; 
+    let szinek = [meret/(max/255), 255, meret/2];
+    let r = szinek[0];  
+    let g = szinek[1];  
+    let b = szinek[2]; 
+    
+    let q = setInterval(peldanyosíto, 100);
+    
+    function peldanyosíto() {
+      if(sy<=(-1*meret)) {
+        clearInterval(q);
+        vegigjart++;  
+        if(vegigjart>=peldanyokSzama-1) 
+            document.getElementById("start").innerHTML='ÚJRA';
+      }
+      else {
+        if(sorszam==1) { // játékos ág
+             
+          peldanyok[1] = {
+            rajzol : '<div id="jatekos" style="position: absolute; left: '+jatekosx+'px; top: '+jatekosy+'px; border-radius: '+jatekosMeret/2+'px; width: '+jatekosMeret+'px; height: '+jatekosMeret+'px; background: radial-gradient(circle at 100%, #057, #49B 50%, #EEF 95%, #057 15%); transform: rotate(90deg); opacity: 0.8;"></div>',
+
+            rajzolo : function() {                           document.getElementById("lada1").innerHTML = this.rajzol;               
+            },
+              
+            novelo : function() {                
+                jatekosx-=5;
+                jatekosy-=5;
+                jatekosMeret+=10;
+                document.getElementById("lada1").innerHTML = this.rajzol;              
+            },
+            csokkento : function() {                
+                jatekosx+=1;
+                jatekosy+=1;
+                jatekosMeret-=2;
+                document.getElementById("lada1").innerHTML = this.rajzol;              
+            }  
+          }  // tömb lezárása
+        }   // játékos ág vége  
+        else {      // sejtek ág 
+            let emelkedesSebessege = ((max/meret)/3+1)*2;
+            sy-=emelkedesSebessege;  
+
+            peldanyok[sorszam] = {
+              
+            rajzol : '<div id="jatekos" style="position: absolute; left: '+sx+'px; top: '+sy+'px; width: '+meret+'px; height: '+meret+'px; border-radius: '+meret/2+'px; background-color: rgba('+r+', '+g+', '+b+', 0.8); z-index: -2"></div>',
+            
+            eltuntet : '',
+
+            rajzolo : function() {
+                document.getElementById("lada"+sorszam).innerHTML = this.rajzol;               
+            },   
+              
+            eltunteto : function() {  
+                // meret=0;
+                sy=-500;
+                document.getElementById("lada"+sorszam).innerHTML = this.eltuntet;
+            }             
+          }   // tömb lezárása
+
+          let jatekoskozepx = jatekosx+(jatekosMeret/2);
+          let sejtkozepx = sx+(meret/2);
+          var kulonbsegx = Math.abs(jatekoskozepx-sejtkozepx);
+          let jatekoskozepy = jatekosy+(jatekosMeret/2);
+          let sejtkozepy = sy+(meret/2);
+          var kulonbsegy = Math.abs(jatekoskozepy-sejtkozepy);
+
+        }  // sejtek ág vége  
+// ütközés figyelés
+        let bennevan = Math.abs(jatekosMeret/2-meret/2);
+        
+        let felt1=jatekosy>(window.innerHeight-jatekosMeret/2);
+        let felt2=jatekosy<(0-jatekosMeret/2);
+        let felt3=jatekosx>(window.innerWidth-jatekosMeret/2);
+        let felt4=jatekosx<(0-jatekosMeret/2);
+          
+        if((kulonbsegx<bennevan) && (kulonbsegy<bennevan)){ 
+          if(jatekosMeret>meret) { 
+            peldanyok[sorszam].eltunteto(); 
+            peldanyok[1].novelo();
+            hangEffekt2.play();          
+          }
+          else { 
+            peldanyok[1].csokkento();
+            hangEffekt1.play();          
+          }
+        }
+        // else if(jatekosy>jatekosMeret/2) {
+        //    peldanyok[sorszam].eltunteto();
+        //  }
+        
+        else if((felt1) || (felt2) || (felt3) || (felt4)) {
+            jatekosy-=10;
+            for(j=2; j<=peldanyokSzama; j++)
+                peldanyok[j].eltunteto();   
+            document.getElementById("start").innerHTML='ÚJRA';
+            if (jatekosMeret<80)
+                jatekosMeret=80;            
+            jatekosx = window.innerWidth/2-(jatekosMeret/2);
+            jatekosy = window.innerHeight-(jatekosMeret/2);
+        }
+        else {
+            peldanyok[sorszam].rajzolo();
+        }
+      }  // else - ha még a határon belül van
+    }   // példányosító()
+}      // osztály()
+   
+ 
+    
+</script>       
+  </head>
+  <body onKeyDown="mozgat(event)"  onload="startHang()">
+      <h3 align="center" id="start" onClick="indul()">Start<br></h3>
+      <h4 align="center" id="kiir">&nbsp;</h4>
+      
+      <div id="tartalom">         
+        
+      </div>    
+
+<script>
+   
+// indul();    
+function mozgat(esemeny) {
+    let kod = esemeny.keyCode;
+    let v=4;         
+        if((kod==37)||(kod==100)) {       // balra
+            jatekosx-=v;
+        }
+        else if((kod==39)||(kod==102)) {  // jobbra           
+            jatekosx+=v;
+        }
+        else if((kod==38)||(kod==104)) {  // fel           
+            jatekosy-=v;
+        }
+        else if((kod==40)||(kod==98)){  // le            
+            jatekosy+=v;
+        }  
+        else if(kod==103) {  // balra és fel          
+            jatekosx-=v;
+            jatekosy-=v;
+        }          
+        else if(kod==105) {  // jobbra és fel          
+            jatekosx+=v;
+            jatekosy-=v;
+        }       
+        else if(kod==97) {  // balra és le          
+            jatekosx-=v;
+            jatekosy+=v;
+        }   
+        else if(kod==99) {  // jobbra és fel          
+            jatekosx+=v;
+            jatekosy+=v;
+        } 
+}  
+</script>
+
+  </body>
+</html>
+
+
+
+
+
